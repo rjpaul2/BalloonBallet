@@ -45,11 +45,11 @@ var splatterMaterial = new THREE.MeshPhongMaterial( {
 //Balloon Material
 var rubber; 
 var rubber_rubber;
-//String Material (no need for string-string)
+
 
 function initCannon(){
 	world = new CANNON.World();
-	world.gravity.set(0,0,100);  //Positive to give the appeal of helium
+	world.gravity.set(0,0,70);  //Positive to give the appeal of helium
 	world.broadphase = new CANNON.NaiveBroadphase(); // Collision
 	world.solver.iterations = 10;
 	
@@ -69,8 +69,23 @@ function initCannon(){
 	timeStep = 1.0/60.0; // 60Hz	
 }
 
+//Original camera parameters (Messy but neat in the final scene)
+     
+const OG_CAM_POS_X = -1.7444381359663044;     
+const OG_CAM_POS_Y = 42; 
+const OG_CAM_POS_Z = 16.58729214144528;
+
+const OG_CAM_ROT_X =  -Math.PI/2;
+const OG_CAM_ROT_Y = 0;
+const OG_CAM_ROT_Z = Math.PI ;
+
+//Current camera positions (updated in OnMouseMove())
+var camPosX = OG_CAM_POS_X;
+var camPosY = OG_CAM_POS_Y;
+
 function initThree(){
 	document.addEventListener( 'mousedown', onMouseDown, false ); //Listen and handle mouse down events for the game
+	document.addEventListener( 'mousemove', onMouseMove, false ); //Listen and handle mouse move events for the game
 
 	HEIGHT = window.innerHeight;
 	WIDTH = window.innerWidth;
@@ -85,14 +100,14 @@ function initThree(){
     );
 	//scene.fog = new THREE.Fog(0xf7d9aa, 0,100);
 
-	camera.position.x = -1.311409293980197;
-	camera.position.y = 39.29444360942298;
-	camera.position.z = 27.763225666496716;
+	camera.position.x = OG_CAM_POS_X;
+	camera.position.y = OG_CAM_POS_Y;
+	camera.position.z = OG_CAM_POS_Z;
   
   
-	camera.rotation.x =  -1.4210422221570593;
-	camera.rotation.y = -0.010896894213826601;
-	camera.rotation.z = -3.138740195056696;
+	camera.rotation.x = OG_CAM_ROT_X;
+	camera.rotation.y = OG_CAM_ROT_Y;
+	camera.rotation.z = OG_CAM_ROT_Z;
 	     
 
 	renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
@@ -129,21 +144,22 @@ var ambientLight, hemisphereLight, shadowLight;
 /*Lights*/
 function createLights(){
 
-	hemisphereLight = new THREE.HemisphereLight(0xaaaaaa,0x000000, .9);
+	hemisphereLight = new THREE.HemisphereLight(0xaaaaaa,0x000000, 0.9);
 
-	ambientLight = new THREE.AmbientLight(0xdc8874, .5);
+	ambientLight = new THREE.AmbientLight(0x7483dc, .5);
 
 	shadowLight = new THREE.DirectionalLight(0xffffff, .9);
-	shadowLight.position.set(15, 35, 35);
+	shadowLight.position.set(150, 150, 350);
+	//shadowLight.position.set(20, 20, 0);
 	shadowLight.castShadow = true;
 	shadowLight.shadow.camera.left = -40;
 	shadowLight.shadow.camera.right = 40;
 	shadowLight.shadow.camera.top = 40;
 	shadowLight.shadow.camera.bottom = -40;
 	shadowLight.shadow.camera.near = 1;
-	shadowLight.shadow.camera.far = 100;
-	shadowLight.shadow.mapSize.width = 204.8;
-	shadowLight.shadow.mapSize.height = 204.8;
+	shadowLight.shadow.camera.far = 1000;
+	shadowLight.shadow.mapSize.width = 2048;
+	shadowLight.shadow.mapSize.height = 2048;
 
 	scene.add(hemisphereLight);
 	scene.add(shadowLight);
@@ -158,14 +174,22 @@ function createPlanes(){
 	groundBody = new CANNON.Body({mass: 0, shape: groundShape}); //Static
 	
 	var backdropGeo = new THREE.BoxGeometry(300, 200, 1);
-	var backdropMat = new THREE.MeshPhongMaterial({specular: 0x111111, transparent: true, opacity: 0.0});
+	var backdropMat = new THREE.MeshPhongMaterial({transparent: true, opacity: 0.0});
 	backdrop = new THREE.Mesh(backdropGeo, backdropMat);
-	backdrop.receieveShadow = true;
-	backdrop.castShadow = true;
+	backdrop.receiveShadow = true;
+	//backdrop.castShadow = true;
 	backdrop.rotation.x = Math.PI/2;
-	backdrop.position.y = -40;
+	backdrop.position.y = -20;
+	//backdrop.position.y = -5;
 	backdrop.position.z = 25;
-
+//aeb5ea
+	var groundGeo = new THREE.BoxGeometry(300, 200, 1);
+	//var groundMat = new THREE.MeshPhongMaterial({transparent: true, opacity: 1.0, color: 0xafb6e9});
+	var groundMat = new THREE.ShadowMaterial({opacity: 0.5});
+	var ground = new THREE.Mesh(groundGeo, groundMat);
+	ground.receiveShadow = true;
+	
+	scene.add(ground);
 	scene.add(backdrop);
 	world.add(groundBody);
 }
@@ -176,7 +200,7 @@ function createPlanes(){
 //Arrays to hold the meshes of the meshes and the bodies of the bodies for each individual instanstiated balloon
 var ropeBodiesBodies = [];
 var ropeMeshesMeshes = [];
-var Rope = function(balloonBody, x, y){
+var Rope = function(balloonBody, x, y, lengthRope){
 	//Local rope mesh and body segment arrays
 	this.ropeBodies = []; 
 	this.ropeMeshes = [];
@@ -189,23 +213,23 @@ var Rope = function(balloonBody, x, y){
     var mass = 1;
     var lastBody = null;
     //var N = Math.floor(Math.random()*40)+10;//Random Height
-    var N = Math.floor(((MAX_BALLOONS - num_balloons + 2)/MAX_BALLOONS) * 45) ;// Increasing height as balloons get added
-
+    //var N = Math.floor(((MAX_BALLOONS - num_balloons + 2)/MAX_BALLOONS) * 45) ;// Increasing height as balloons get added
+    //var N = Math.floor(((MAX_BALLOONS - num_balloons + 2)/MAX_BALLOONS) * 15 + 35);
     var ropeMat = new THREE.LineBasicMaterial( { color: 0x787878, transparent: true, opacity: 1.0 } );
     this.mesh = new THREE.Object3D();
     this.mesh.name = "rope";
     //world.solver.iterations = N; // To be able to propagate force throw the chain of N spheres, we need at least N solver iterations.
-    for(var i=0; i<N; i++){
+    for(var i=0; i<lengthRope; i++){
     	/*BODY WORK*/
     	mass = i + 1;
 
     	var ropeBody = new CANNON.Body({ 
     		mass: mass,
-    		linearDamping: 0.99,
-    		angularDamping: 0.99});
+    		linearDamping: 0.85,
+    		angularDamping: 0.95});
       
     	ropeBody.addShape(bodySegmentShape);
-    	ropeBody.position.set(x,y,(N-i-22)*dist);
+    	ropeBody.position.set(x,y,(lengthRope-i-22)*dist);
     	ropeBody.velocity.x = i; //Wind
       
     	this.ropeBodies.push(ropeBody);
@@ -213,7 +237,7 @@ var Rope = function(balloonBody, x, y){
 
       // Connect this body to the last one added
     	var c;
-    	if(i === N - 1){//If we're at our last segment, connect it to the plane
+    	if(i === lengthRope - 1){//If we're at our last segment, connect it to the plane
     		//world.addConstraint(c = new CANNON.DistanceConstraint(ropeBody, groundBody, dist));
     		world.addConstraint(c = new CANNON.PointToPointConstraint(ropeBody,new CANNON.Vec3(0,0,-size),groundBody,new CANNON.Vec3(x,y,size)));
     		world.addConstraint(c = new CANNON.PointToPointConstraint(ropeBody,new CANNON.Vec3(0,0,size),lastBody,new CANNON.Vec3(0,0,-size)));
@@ -235,8 +259,8 @@ var Rope = function(balloonBody, x, y){
 		var ropeGeo = new THREE.BoxBufferGeometry(0.02,0.02,dist);
 		var ropeMesh = new THREE.Mesh(ropeGeo, ropeMat);
 		ropeMesh.castShadow = true;
-		ropeMesh.receiveShadow = true;
-		ropeMesh.position.set(0,0,(N-i)*dist);
+		//ropeMesh.receiveShadow = true;
+		ropeMesh.position.set(0,0,(lengthRope-i)*dist);
 		this.ropeMeshes.push(ropeMesh);
       
 		this.mesh.add(ropeMesh);      
@@ -252,42 +276,45 @@ const BALLOONS_COLOR = 0x3333ff;
 /*Creates a Balloon mesh and attaches it and assosiates it with a rope
  * Please excuse the "trail and error" numbers used -- Blender didn't work out for me
  * @param x : x-cord on horizontal plane
- * @param y: y-param on the horizontal plane 
- * @color: the color of the paint splatter, inside the balloon
+ * @param y: y-param on the horizontal plane
+ * @param lengthRope: how many segments the rope should be MUST BE INTEGER 
+ * @param color: the color of the paint splatter, inside the balloon
  */
-var Balloon = function(scale, x, y, color){
+var Balloon = function(scale, x, y, lengthRope, color){
 	/*MESH WORK*/
 	this.mesh = new THREE.Object3D();
 	this.mesh.name = "balloon";
-	this.mesh.castShadows = true;
-	this.mesh.receiveShadow = true;
 
 	var balloonMat = new THREE.MeshPhongMaterial({
 		color: BALLOONS_COLOR, 
 		transparent: true, 
-		opacity: 0.8,
+		opacity: 0.9,
 		specular: BALLOONS_COLOR,
 		shininess: 100});
-	balloonMat.castShadow = true;
-	balloonMat.receiveShadow = true;
 	
 	// Top of the Balloon
 	var radius = 7; var widthSegments = 14; var heightSegments = 8; var phiStart = 0; var phiLength = 6.285; var thetaStart = 0; var thetaLength = 2.095 
 	var topGeo = new THREE.SphereBufferGeometry(radius,widthSegments,heightSegments,phiStart,phiLength,thetaStart,thetaLength);
 	var top = new THREE.Mesh(topGeo, balloonMat);
+	top.castShadow = true;
+	top.receiveShadow = true;
 	this.mesh.add(top);
 	
 	// Torso of Balloon
 	var radiusTop = 6.07; var radiusBottom = 0.6; var height = 12; var openEnded = true; var thetaStart2 = 1.58; var thetaLength2 = 6.285;
 	var torsoGeo = new THREE.CylinderBufferGeometry(radiusTop, radiusBottom, height, widthSegments, heightSegments, openEnded, thetaStart2, thetaLength2);
 	var torso = new THREE.Mesh(torsoGeo, balloonMat);
-	torso.position.y = -9.5; // Position the body appropriately 
+	torso.position.y = -9.5; // Position the body appropriately
+	torso.castShadow = true;
+	torso.receiveShadow = true;
 	this.mesh.add(torso);
 	
 	// Bottom of Balloon
 	var bottomGeo = new THREE.OctahedronBufferGeometry();
 	var bottom = new THREE.Mesh(bottomGeo, balloonMat);
 	bottom.position.y = -15.9;
+	bottom.castShadow = true;
+	bottom.receiveShadow = true;
 	this.mesh.add(bottom);
 	
 	this.mesh.rotation.x = Math.PI/2; //Orient Vertically
@@ -299,7 +326,7 @@ var Balloon = function(scale, x, y, color){
 		material: rubber,
 		mass: 2,
 		linearDamping: 0.99,
-  	  	angularDamping: 0.99});
+  	  	angularDamping: 1.0});
 	
 	// Similar shape and position of the top mesh (need to shift up instead so the anchor can be at (0,0,0), need to also shift up the balloon mesh
 	this.body.addShape(new CANNON.Sphere(radius * scale), new CANNON.Vec3(0,-1* scale * bottom.position.y,0));
@@ -312,7 +339,7 @@ var Balloon = function(scale, x, y, color){
 	this.body.quaternion.copy(this.mesh.quaternion); //Orient the body the same way as the mesh (get on the same
 	
 	/*ROPE*/
-	this.mesh.rope = new Rope(this.body, x, y); //Keep track of the rope in the object
+	this.mesh.rope = new Rope(this.body, x, y, lengthRope); //Keep track of the rope in the object
 	
 	
 	//View the Rigid Bodies (need cannon.demo.js, Detector.js, smoothie.js, TrackballControls.js, and Stats.js)
@@ -340,10 +367,37 @@ const MAX_BALLOONS = 8; //Final number of balloons
 /*Places balloons sporadically in the scene*/
 function addBalloons(){
 	var N = 8;//Number of balloons (should be even for the game)
+	var x,y,length;
 	for( var i = 0; i <MAX_BALLOONS; i++){
-		balloon = new Balloon(0.25, 
-				0,//Math.floor(Math.random() * 60) - 30, //Random position x in [30, -30]
-				7,//Math.floor(Math.random() * 40)- 20, //y in [20, -20]
+		/*Upside-down pyramid design (like the UP movie)
+		 * VERY Messy way to orient these balloons -- TODO: make prettier for balloons different from 8*/
+		switch(i){
+		case 0:
+			length = 28;x = 0;y = 10;break;
+		case 1:
+			x = 2;y = 9;length = 35;break;
+		case 2:
+			x = 0;y = 8;length = 40;break;
+		case 3:
+			x = -2;y = 9;length = 35;break;
+		case 4:
+			x = -1;y = 5;length = 48;break;
+		case 5:
+			x = 1;y = 4.5;length = 50;break;
+		case 6:
+			x = -2.7;y = 6;length = 42;break;
+		case 7:	
+			x = 2.7;y = 7;length = 42;break;
+		default:
+			x = 0;y = 7;length=30;break;
+		}
+		balloon = new Balloon(0.25,
+				x,
+				y,
+				//0,//Math.floor(Math.random() * 60) - 30, //Random position x in [30, -30]
+				//7,//Math.floor(Math.random() * 40)- 20, //y in [20, -20]
+				//Math.floor(((MAX_BALLOONS - num_balloons + 2)/MAX_BALLOONS) * 45), // Increasing height as balloons get added
+				length - 4,
 				colors[i%(MAX_BALLOONS/2)]); //colored pairs
 		//Update globals
 		balloonMeshes.push(balloon.mesh);
@@ -351,8 +405,7 @@ function addBalloons(){
 	
 		//TODO: MIGHT NOT NEED THIS?
 		meshToBody(balloon.mesh, balloon.body); //Match body position/rotation to mesh
-	}	
-	
+	}		
 }
 
 /*Main loop*/
@@ -360,11 +413,18 @@ function render(){
 	requestAnimationFrame(render);
 	renderer.render(scene, camera);
 	updatePhysics();
+	updateCamera();
 	checkDone();
 	//controls.update();
 	//console.log(camera.position.x + " " +  camera.position.y + " " +  camera.position.z + " " +  camera.rotation.x + " " +  camera.rotation.y + " " +  camera.rotation.z);
 	//console.log(balloonBody.position + " " +  balloonMesh.rope);
 }
+
+function updateCamera(){
+	camera.position.x = camPosX;
+	camera.position.y = camPosY
+}
+
 /*Updates mesh and body connections and steps the physics*/
 function updatePhysics(){
 	// Step the physics world
@@ -420,7 +480,27 @@ function checkDone(){
 		}, 1000)		
 	}
 }
-var currBalloon = null;
+
+const TOL = 0.05; //Max distance between the current and new cam position before a tween animation is required
+/*Updates camera location based on mouse position*/
+function onMouseMove(e){
+	var currTween = {currX: camPosX, currY: camPosY}
+	//Smooth exponential function
+	var newCamPosX = OG_CAM_POS_X + Math.exp(((e.clientX/renderer.domElement.width) * 2 - 1) / 2);
+	var newCamPosY = OG_CAM_POS_Y - Math.exp(((e.clientY/renderer.domElement.height) * 2 + 1) / 2);
+	
+	//Interpolation
+	if(Math.abs(newCamPosX - camPosX) > TOL) 
+		TweenLite.to(currTween, 1.0, {currX: newCamPosX, onUpdate: function(){
+			camPosX = currTween.currX;
+		}});
+	if(Math.abs(newCamPosY - camPosY) > TOL) 
+		TweenLite.to(currTween, 1.0, {currY: newCamPosY, onUpdate: function(){
+			camPosY = currTween.currY;
+		}});
+}
+
+	var currBalloon = null;
 /* Handler for user clicks */
 function onMouseDown(e){
 	HEIGHT = window.innerHeight; //Update window size
@@ -438,7 +518,7 @@ function onMouseDown(e){
 	raycaster.set(camera.position, mouseVector.sub(camera.position).normalize());
 
 	// If the mouse intersects a balloon, pop the balloon
-	var balloonIntersects = raycaster.intersectObjects(balloonMeshes,true); //TODO: MAKE SURE TO CHANGE TO THE balloonMeshArray
+	var balloonIntersects = raycaster.intersectObjects(balloonMeshes,true); 
 	// If the mouse intersects with the backdrop, splatter on the backdrop
 	var wallIntersects = raycaster.intersectObject(backdrop,true);
 	if(balloonIntersects[0]){
@@ -492,7 +572,7 @@ function pop(balloon){
 	
 	//Make the rope fall (necessary because gravity is upwards)
 	for(var i = 0; i < balloon.rope.ropeBodies.length; i++){
-		balloon.rope.ropeBodies[i].velocity.y = -10*Math.sqrt(i); //Simulate gravity in the opposite direction
+		balloon.rope.ropeBodies[i].velocity.y = -1*Math.sqrt(i); //Simulate gravity in the opposite direction
 	}
 
 	//Make the rope disappear after COLLAPSE_TIME milliseconds 
@@ -524,7 +604,7 @@ function splatterOnBackDrop(position, color){
 	rotation.z = Math.random() * 2 * Math.PI;
 	
 	//Randomize scale between 12 - 32
-	var scale = 12 + Math.random() * 20;
+	var scale = 8 + Math.random() * 10;
 	
 	//Colors
 	var material = splatterMaterial.clone();
