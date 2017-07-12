@@ -1,0 +1,31 @@
+{
+  "name": "balloon_ballet",
+  "version": "1.0.0",
+  "description": "THREE.js project",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rjpaul2/BalloonBallet.git"
+  },
+  "keywords": [
+    "balloon",
+    "three",
+    "js"
+  ],
+  "author": "Robert J Paul",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rjpaul2/BalloonBallet/issues"
+  },
+  "homepage": "https://github.com/rjpaul2/BalloonBallet#readme",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-uglify": "^3.0.1",
+    "grunt-contrib-watch": "^1.0.0"
+  }
+}

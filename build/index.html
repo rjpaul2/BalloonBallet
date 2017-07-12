@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Balloon Ballet</title>
+		<meta name="description" content="Find all colored pair of balloons by clicking on them. Clear all balloons to win the game!" />
+		<meta name="keywords" content="three.js, webgl, 3d, javascript, match, balloon, pop, game" />
+		<meta name="author" content="Robert J Paul" />
+		<link rel="stylesheet" type="text/css" href="css/styles.css" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Bubbler+One|Oxygen" >
+		<link rel="shortcut icon" type="image/x-icon" href="img/balloon_favicon.ico" />
+		<script type="text/javascript" src="js/vendors.min.js"></script>
+		<script type="text/javascript" src="js/scene.min.js"></script>
+		<script>
+			/*Fades in scene*/
+			$(document).ready(function(){
+				$("#button").fadeOut(0); //Button out to begin with
+				$("#world").fadeOut(0); //Lights out to begin with
+				setTimeout(function(){$("#world").fadeIn(2000);},1500);//Fade in (only use of JQuery)
+			});
+		</script>
+		<!--[if IE]>
+  		<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+		<style>
+			body #cdawrap { background: none; border: 1px solid #d1b790; top: auto; bottom: 12px; left: 12px; right: auto; }
+		</style>
+	</head>
+	<body>
+		<button class="button" id="button" onClick="window.location.reload()">Restart</button>
+		<div class="world" id="world"></div>
+		
+	</body>
+</html>

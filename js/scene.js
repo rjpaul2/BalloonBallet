@@ -71,13 +71,13 @@ function initCannon(){
 
 //Original camera parameters (Messy but neat in the final scene)
      
-const OG_CAM_POS_X = -1.7444381359663044;     
-const OG_CAM_POS_Y = 42; 
-const OG_CAM_POS_Z = 16.58729214144528;
+var OG_CAM_POS_X = -1.7444381359663044;     
+var OG_CAM_POS_Y = 42; 
+var OG_CAM_POS_Z = 16.58729214144528;
 
-const OG_CAM_ROT_X =  -Math.PI/2;
-const OG_CAM_ROT_Y = 0;
-const OG_CAM_ROT_Z = Math.PI ;
+var OG_CAM_ROT_X =  -Math.PI/2;
+var OG_CAM_ROT_Y = 0;
+var OG_CAM_ROT_Z = Math.PI ;
 
 //Current camera positions (updated in OnMouseMove())
 var camPosX = OG_CAM_POS_X;
@@ -272,7 +272,7 @@ var Rope = function(balloonBody, x, y, lengthRope){
     scene.add(this.mesh);
 }
 var num_balloons = 0; //Current number of balloons
-const BALLOONS_COLOR = 0x3333ff;
+var BALLOONS_COLOR = 0x3333ff;
 /*Creates a Balloon mesh and attaches it and assosiates it with a rope
  * Please excuse the "trail and error" numbers used -- Blender didn't work out for me
  * @param x : x-cord on horizontal plane
@@ -362,7 +362,7 @@ var Balloon = function(scale, x, y, lengthRope, color){
 }
 var balloonMeshes = [];
 var balloonBodies = [];
-const MAX_BALLOONS = 8; //Final number of balloons
+var MAX_BALLOONS = 8; //Final number of balloons
 
 /*Places balloons sporadically in the scene*/
 function addBalloons(){
@@ -481,7 +481,7 @@ function checkDone(){
 	}
 }
 
-const TOL = 0.05; //Max distance between the current and new cam position before a tween animation is required
+var TOL = 0.05; //Max distance between the current and new cam position before a tween animation is required
 /*Updates camera location based on mouse position*/
 function onMouseMove(e){
 	var currTween = {currX: camPosX, currY: camPosY}
@@ -555,7 +555,7 @@ function onMouseDown(e){
 	    }
 	}
 }
-const COLLAPSE_TIME = 1000; //Time it takes after a pop that the rope dissapears
+var COLLAPSE_TIME = 1000; //Time it takes after a pop that the rope dissapears
 /*Hides balloon object mesh, sounds a "pop" tone, collapses the rope
  * @param balloon: the Balloon object at hand
  */
